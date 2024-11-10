@@ -1,7 +1,6 @@
 package com.example.demo;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,9 +11,8 @@ import java.util.stream.IntStream;
 public class TestUtils extends AbstractBaseTest {
     private static final Logger logger = LoggerFactory.getLogger(TestUtils.class);
 
-    private static List<V1_STATUS> v1_STATUSES = List.of(V1_STATUS.STATUS_1, V1_STATUS.STATUS_2, V1_STATUS.STATUS_3, V1_STATUS.STATUS_4);
 
-    public static void createTable(AmazonDynamoDB ddb, String tableName) {
+    public static void createTable(String tableName) {
         ddb.listTables().getTableNames().forEach(t -> logger.info("table : " + t));
         ddb.deleteTable(tableName);
         CreateTableRequest request = new CreateTableRequest()                                             // RANGE is Optional
@@ -34,7 +32,7 @@ public class TestUtils extends AbstractBaseTest {
         }
     }
 
-    public static void insertItem(AmazonDynamoDB ddb, String tableName, int range) {
+    public static void insertItems(String tableName, int range) {
 
         IntStream.range(0, range).forEach(i -> {
                     int randomIdx = new Random().nextInt(v1_STATUSES.size());
@@ -55,7 +53,7 @@ public class TestUtils extends AbstractBaseTest {
         );
     }
 
-    public static void scanByStatus(AmazonDynamoDB ddb, String tableName, int range, V1_STATUS STATUS) {
+    public static void scanByStatus(String tableName, int range, V1_STATUS STATUS) {
         ScanRequest request = new ScanRequest();
         request.setTableName(tableName);
         request.setLimit(range);
@@ -68,7 +66,8 @@ public class TestUtils extends AbstractBaseTest {
         logger.info("items[" + STATUS.name() + "] -> " + response.getItems());
         System.out.println();
     }
-    public static void scanAndUpdate(AmazonDynamoDB ddb, String tableName, int range, V1_STATUS STATUS, V2_STATUS UPDATE_STATUS) {
+
+    public static void scanAndUpdate(String tableName, int range, V1_STATUS STATUS, V2_STATUS UPDATE_STATUS) {
 
 
         do {
@@ -79,14 +78,14 @@ public class TestUtils extends AbstractBaseTest {
             request.setFilterExpression("#status = :status");
             request.addExpressionAttributeNamesEntry("#status", STATUS_COLUMN_NAME);
             ScanResult response = ddb.scan(request);
-            List<Map<String,AttributeValue>> results = response.getItems();
+            List<Map<String, AttributeValue>> results = response.getItems();
             int statusV1results = results.size();
-            if(statusV1results == 0){
+            if (statusV1results == 0) {
                 break;
             }
-            results.forEach( item -> {
+            results.forEach(item -> {
 
-                HashMap<String,AttributeValueUpdate> attrUpdateMap =
+                HashMap<String, AttributeValueUpdate> attrUpdateMap =
                         new HashMap<>();
                 attrUpdateMap.put(METADATA_COLUMN_NAME, new AttributeValueUpdate(
                         new AttributeValue("{\"isMigratedFromV1\": true}"), AttributeAction.PUT));
@@ -98,7 +97,7 @@ public class TestUtils extends AbstractBaseTest {
                 updateItemRequest.setKey(Map.of(ID_COLUMN_NAME, new AttributeValue(item.get(ID_COLUMN_NAME).getS())));
                 updateItemRequest.setAttributeUpdates(attrUpdateMap);
                 try {
-                   ddb.updateItem(updateItemRequest);
+                    ddb.updateItem(updateItemRequest);
                 } catch (ResourceNotFoundException e) {
                     logger.error("error updating: " + e.getMessage());
                     System.exit(1);
@@ -117,7 +116,7 @@ public class TestUtils extends AbstractBaseTest {
             */
         }
         while (true);
-        logger.info("update complete for [" + UPDATE_STATUS +"]");
+        logger.info("update complete for [" + UPDATE_STATUS + "]");
 
     }
 

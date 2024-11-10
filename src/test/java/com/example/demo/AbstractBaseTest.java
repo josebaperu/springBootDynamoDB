@@ -7,7 +7,10 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 
+import java.util.List;
+
 public abstract class AbstractBaseTest {
+    protected static List<V1_STATUS> v1_STATUSES = List.of(V1_STATUS.STATUS_1, V1_STATUS.STATUS_2, V1_STATUS.STATUS_3, V1_STATUS.STATUS_4);
 
     private static final String ENDPOINT = "http://localhost:8000";
     private static final String REGION = Regions.US_EAST_1.getName();
